@@ -14,14 +14,14 @@ public class TCPServer : SingletonMonoBehaviour<TCPServer>
     private bool isRunning;
 
     // 변수 선언
-    public float M_s;
-    public float M_u;
-    public float K_s;
-    public float K_t;
-    public float c1;
-    public float c2;
-    public float sampling_time;
-    public float total_time;
+    public float M_s = 0.0f;
+    public float M_u = 0.0f ;
+    public float K_s = 0.0f;
+    public float K_t = 0.0f;
+    public float c1 = 0.0f;
+    public float c2 = 0.0f;
+    public float sampling_time = 0.0f;
+    public float total_time = 0.0f;
 
 
     public Dictionary<string, float> parameters = new Dictionary<string, float>();

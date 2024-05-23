@@ -11,6 +11,7 @@ public class UIManager : MonoBehaviour
     void Start()
     {
         printBtn.onClick.AddListener(OnPrintValue);
+        updateBtn.onClick.AddListener(OnStartSimulation);
     }
 
     // Update is called once per frame
@@ -20,5 +21,10 @@ public class UIManager : MonoBehaviour
         {
             print(value.Value);
         }
+    }
+
+    void OnStartSimulation()
+    {
+       
     }
 }

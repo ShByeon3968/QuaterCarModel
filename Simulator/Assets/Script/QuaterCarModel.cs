@@ -1,87 +1,79 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class QuarterCarModel : MonoBehaviour
 {
-    // 변수 설정 (초기 조건 및 시스템 파라미터)
-    public float m1 = 250.0f; // 스프렁 질량
-    public float m2 = 50.0f;  // 언스프렁 질량
-    public float k1 = 15000.0f; // 스프링 상수
-    public float k2 = 200000.0f; // 타이어 강성
-    public float c1 = 1000.0f; // 서스펜션 댐퍼 계수
-    public float c2 = 2000.0f; // 타이어 댐퍼 계수
+    public float m1 = 250f;  // 차체 질량 (kg)
+    public float m2 = 50f;   // 휠 질량 (kg)
+    public float k1 = 80000f;  // 서스펜션 스프링 상수 (N/m)
+    public float k2 = 500000f;  // 타이어 스프링 상수 (N/m)
+    public float c1 = 1000f;   // 서스펜션 댐퍼 계수 (Ns/m)
+    public float c2 = 2000f;   // 타이어 댐퍼 계수 (Ns/m)
 
-    private float[] state = new float[4] { 0.0f, 0.0f, 0.0f, 0.0f }; // 초기 상태 [x1, v1, x2, v2]
+    public float bumpstart = 2.0f;  // 요철 시작 시간 (s)
+    public float bumpend = 2.5f;    // 요철 종료 시간 (s)
+    public float bumpamp = 0.001f;  // 요철 진폭 (m)
+    public float simulationTime = 5.0f;
+    public int steps = 1000;
 
-    public float totalTime = 5.0f; // 전체 시뮬레이션 시간
-    public float dt = 0.01f; // 타임 스텝
+    private List<float> times;
+    private List<Vector4> states;  // [x1, v1, x2, v2]
 
-    private void Start()
+    public void StartSimulation()
     {
-        
-    }
+        times = new List<float>();
+        states = new List<Vector4>();
 
-    private void Simulate()
-    {
-        float time = 0.0f;
-        while (time <= totalTime)
+        float dt = simulationTime / steps;
+        Vector4 state = new Vector4(0, 0, 0, 0);  // 초기 조건 [x1, v1, x2, v2]
+
+        for (float t = 0; t <= simulationTime; t += dt)
         {
-            float[] k1 = QuarterCarModelEquations(time, state);
-            float[] k2 = QuarterCarModelEquations(time + dt / 2.0f, AddVectors(state, MultiplyVector(k1, dt / 2.0f)));
-            float[] k3 = QuarterCarModelEquations(time + dt / 2.0f, AddVectors(state, MultiplyVector(k2, dt / 2.0f)));
-            float[] k4 = QuarterCarModelEquations(time + dt, AddVectors(state, MultiplyVector(k3, dt)));
+            times.Add(t);
+            states.Add(state);
 
-            for (int i = 0; i < state.Length; i++)
-            {
-                state[i] += dt / 6.0f * (k1[i] + 2.0f * k2[i] + 2.0f * k3[i] + k4[i]);
-            }
+            Vector4 k1 = dt * QuarterCarDynamics(t, state);
+            Vector4 k2 = dt * QuarterCarDynamics(t + 0.5f * dt, state + 0.5f * k1);
+            Vector4 k3 = dt * QuarterCarDynamics(t + 0.5f * dt, state + 0.5f * k2);
+            Vector4 k4 = dt * QuarterCarDynamics(t + dt, state + k3);
 
-            time += dt;
-
-            Debug.Log($"Time: {time:F2} s, x1: {state[0]:F4} m, v1: {state[1]:F4} m/s, x2: {state[2]:F4} m, v2: {state[3]:F4} m/s");
+            state = state + (1.0f / 6.0f) * (k1 + 2 * k2 + 2 * k3 + k4);
         }
     }
 
-
-    private float RoadInput(float t)
+    Vector4 QuarterCarDynamics(float t, Vector4 y)
     {
-        return 0.01f * Mathf.Sin(2.0f * Mathf.PI * 1.0f * t); // 진폭 0.01m, 주파수 1Hz
-    }
-
-    private float[] QuarterCarModelEquations(float t, float[] y)
-    {
-        float x1 = y[0];
-        float v1 = y[1];
-        float x2 = y[2];
-        float v2 = y[3];
+        float x1 = y.x;
+        float v1 = y.y;
+        float x2 = y.z;
+        float v2 = y.w;
         float z = RoadInput(t);
 
         float dx1_dt = v1;
         float dv1_dt = (1 / m1) * (-k1 * (x1 - x2) - c1 * (v1 - v2));
         float dx2_dt = v2;
-        float dv2_dt = (1 / m2) * (k1 * (x1 - x2) + c1 * (v1 - v2) - k2 * (x2 - z) - c2 * (v2 - 0));
+        float dv2_dt = (1 / m2) * (k1 * (x1 - x2) + c1 * (v1 - v2) - k2 * (x2 - z) - c2 * v2);
 
-        return new float[] { dx1_dt, dv1_dt, dx2_dt, dv2_dt };
+        return new Vector4(dx1_dt, dv1_dt, dx2_dt, dv2_dt);
     }
 
-    private float[] AddVectors(float[] a, float[] b)
+    float RoadInput(float t)
     {
-        float[] result = new float[a.Length];
-        for (int i = 0; i < a.Length; i++)
+        if (bumpstart <= t && t <= bumpend)
         {
-            result[i] = a[i] + b[i];
+            return bumpamp * Mathf.Sin(Mathf.PI * (t - bumpstart) / (bumpend - bumpstart));
         }
-        return result;
+        else
+        {
+            return 0;
+        }
     }
 
-    private float[] MultiplyVector(float[] a, float b)
+    void SetParameters()
     {
-        float[] result = new float[a.Length];
-        for (int i = 0; i < a.Length; i++)
-        {
-            result[i] = a[i] * b;
-        }
-        return result;
+
     }
+
+    public List<float> GetTimes() => times;
+    public List<Vector4> GetStates() => states;
 }
