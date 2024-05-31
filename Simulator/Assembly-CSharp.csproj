@@ -56,11 +56,11 @@
     <Analyzer Include="C:\Program Files\Microsoft Visual Studio\2022\Professional\Common7\IDE\Extensions\Microsoft\Visual Studio Tools for Unity\Analyzers\Microsoft.Unity.Analyzers.dll" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\Script\QuarterCarSimulator.cs" />
     <Compile Include="Assets\Script\UIManager.cs" />
     <Compile Include="Assets\Script\TCPServer.cs" />
     <Compile Include="Assets\Script\QuaterCarModel.cs" />
     <Compile Include="Assets\Script\Singleton.cs" />
-    <Compile Include="Assets\Script\QuarterCarSimulator.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">
